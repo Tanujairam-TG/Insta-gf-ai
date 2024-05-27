@@ -1,7 +1,9 @@
+from instabot import Bot
+
 def login_to_instagram(username, password):
-    # Implement your Instagram login logic here
-    # Return an authenticated session or access token
-    pass
+    bot = Bot()
+    bot.login(username=username, password=password)
+    return bot
 
 # Example usage:
-# session = login_to_instagram(INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD)
+# session = login_to_instagram("your_instagram_username", "your_instagram_password")
