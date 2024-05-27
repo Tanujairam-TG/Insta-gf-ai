@@ -1,6 +1,6 @@
-INSTAGRAM_USERNAME = "your_instagram_username"
-INSTAGRAM_PASSWORD = "your_instagram_password"
-MONGODB_URI = "your_mongodb_uri"
+INSTAGRAM_USERNAME = "aria.ai.gf"
+INSTAGRAM_PASSWORD = "tanu@23072008"
+MONGODB_URI = "mongodb+srv://tanujairam:tanujairam@whatsapp.yixkzgb.mongodb.net/?retryWrites=true&w=majority&appName=Whatsapp"
 
 # Sakura.fm credentials
 SAKURA_USERNAME = "your_sakura_username"
