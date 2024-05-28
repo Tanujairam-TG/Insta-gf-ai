@@ -27,6 +27,9 @@ def fetch_unread_messages(session):
         unread_threads = [thread for thread in all_threads if not thread.items[0].item.seen]
         logger.info(f"Fetched {len(unread_threads)} unread message threads.")
         return unread_threads
+    except AttributeError:
+        logger.info("No unread messages.")
+        return []
     except Exception as e:
         logger.error(f"Error fetching unread messages: {e}")
         return []
@@ -46,7 +49,7 @@ def main():
         try:
             unread_messages = fetch_unread_messages(session)
             for thread in unread_messages:
-                for message in thread.messages:
+                for message in thread.items:
                     user_id = message.user_id
                     received_text = message.text
                     logger.info(f"Received message from user {user_id}: {received_text}")
