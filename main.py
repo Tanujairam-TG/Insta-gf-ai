@@ -1,4 +1,3 @@
-import time
 import logging
 from instagrapi import Client
 from sakura import Client as SakuraClient
@@ -26,6 +25,8 @@ def fetch_unread_messages(session):
         all_threads = session.direct_threads()
         unread_threads = [thread for thread in all_threads if not thread.items[0].item.seen]
         logger.info(f"Fetched {len(unread_threads)} unread message threads.")
+        for thread in unread_threads:
+            logger.debug(f"Thread content: {thread.items}")
         return unread_threads
     except AttributeError:
         logger.info("No unread messages.")
@@ -75,9 +76,6 @@ def main():
                         sent_messages.add((user_id, received_text))
                     else:
                         logger.info("Skipping already processed message.")
-
-            # Wait for a minute before checking for new messages again to avoid rate limiting
-            time.sleep(60)
 
         except KeyboardInterrupt:
             print("\nChatbot stopped by user.")
