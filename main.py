@@ -1,6 +1,13 @@
+# chatbot.py
+
+import logging
 from instabot import Bot
 from sakura import Client
 from config import *
+
+# Configure logging
+logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
+logger = logging.getLogger(__name__)
 
 def login_to_instagram(username, password):
     bot = Bot()
@@ -31,8 +38,14 @@ def main():
                 user_id = message["user_id"]
                 received_text = message["text"]
 
+                # Log user message and username
+                logger.info(f"Received message from user {user_id}: {received_text}")
+
                 # Send the received message to Sakura.fm
                 sakura_response = sakura_bot.send_message_to_sakura(user_id, 'dmDCgmq', received_text)
+
+                # Log Sakura.fm response
+                logger.info(f"Sakura.fm response: {sakura_response}")
 
                 # Send the Sakura.fm response back to the user on Instagram
                 session.send_message(user_id, sakura_response)
@@ -40,7 +53,7 @@ def main():
             print("\nChatbot stopped by user.")
             break
         except Exception as e:
-            print(f"Error: {e}")
+            logger.error(f"Error: {e}")
 
 if __name__ == "__main__":
     main()
