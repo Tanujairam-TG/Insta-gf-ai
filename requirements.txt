@@ -1,4 +1,2 @@
-requests
-InstagramAPI
+instagrapi
 sakura_fm
-urllib3
