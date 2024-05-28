@@ -29,11 +29,17 @@ def fetch_unread_messages(session):
         # Sleep for a short duration to avoid hitting rate limits
         time.sleep(WAIT_TIME_BETWEEN_REQUESTS)
 
+        # Fetch all direct message threads
         all_threads = session.direct_threads()
+
+        # Filter unread threads
         unread_threads = [thread for thread in all_threads if not thread.items[0].item.seen]
         logger.info(f"Fetched {len(unread_threads)} unread message threads.")
+
+        # Log thread content for debugging
         for thread in unread_threads:
             logger.debug(f"Thread content: {thread.items}")
+
         return unread_threads
     except AttributeError:
         logger.info("No unread messages.")
