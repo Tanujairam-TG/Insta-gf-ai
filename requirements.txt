@@ -1,2 +1,3 @@
 instagrapi
 sakura_fm
+Pillow
