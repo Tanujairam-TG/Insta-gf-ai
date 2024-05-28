@@ -1,3 +1,4 @@
+import time
 import logging
 from instabot import Bot
 from sakura import Client
@@ -19,6 +20,10 @@ class SakuraChatbot:
     def send_message_to_sakura(self, uid, char_id, prompt):
         response = self.client.sendMessage(uid, char_id, prompt)
         return response["reply"]  # Extract the relevant part of the response
+
+def handle_rate_limit(bot):
+    logger.warning("Rate limit hit. Sleeping for 5 minutes.")
+    time.sleep(300)  # Sleep for 5 minutes
 
 def main():
     # Authenticate with Instagram
@@ -48,8 +53,16 @@ def main():
 
                     # Send the Sakura.fm response back to the user on Instagram
                     session.send_message(user_id, sakura_response)
+
+                # Delay between requests to avoid hitting rate limits
+                time.sleep(10)  # Adjust the sleep time as needed
+
             except Exception as e:
-                logger.error(f"Error processing messages: {e}")
+                if '429' in str(e):
+                    handle_rate_limit(session)
+                else:
+                    logger.error(f"Error processing messages: {e}")
+
     except KeyboardInterrupt:
         print("\nChatbot stopped by user.")
     finally:
