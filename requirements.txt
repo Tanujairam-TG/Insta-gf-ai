@@ -1,2 +1,2 @@
-instabot==1.4.0
-sakura_fm==1.0.0
+instabot
+sakura_fm
