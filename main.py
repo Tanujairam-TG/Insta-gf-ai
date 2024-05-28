@@ -23,7 +23,8 @@ class SakuraChatbot:
 
 def handle_rate_limit(bot):
     logger.warning("Rate limit hit. Sleeping for 5 minutes.")
-    time.sleep(300)  # Sleep for 5 minutes
+    for _ in range(5):  # Sleep in 1-minute increments to avoid Heroku timeout
+        time.sleep(60)
 
 def main():
     # Authenticate with Instagram
