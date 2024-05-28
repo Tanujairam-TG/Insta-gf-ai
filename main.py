@@ -1,74 +1,74 @@
 import time
 import logging
-from instabot import Bot
-from sakura import Client
-from config import *
+from InstagramAPI import InstagramAPI
+from sakura import Client  
+from config import *  
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
 logger = logging.getLogger(__name__)
 
-def login_to_instagram(username, password):
-    bot = Bot()
-    bot.login(username=username, password=password)
-    return bot
+class InstagramChatbot:
+    def __init__(self, username, password):
+        self.api = InstagramAPI(username, password)
+        self.api.login()
 
-class SakuraChatbot:
-    def __init__(self, username, password, mongo_uri):
-        self.client = Client(username=username, password=password, mongo=mongo_uri)
+    def get_direct_messages(self):
+        self.api.getv2Inbox()
+        inbox = self.api.LastJson
+        messages = []
 
-    def send_message_to_sakura(self, uid, char_id, prompt):
-        response = self.client.sendMessage(uid, char_id, prompt)
-        return response["reply"]  # Extract the relevant part of the response
+        if 'inbox' in inbox and 'threads' in inbox['inbox']:
+            for thread in inbox['inbox']['threads']:
+                for item in thread['items']:
+                    if item['item_type'] == 'text':
+                        messages.append({
+                            'user_id': item['user_id'],
+                            'text': item['text']
+                        })
+        return messages
 
-def handle_rate_limit(bot):
-    logger.warning("Rate limit hit. Sleeping for 5 minutes.")
-    for _ in range(5):  # Sleep in 1-minute increments to avoid Heroku timeout
-        time.sleep(60)
+    def send_message(self, user_id, text):
+        self.api.direct_message(text, user_id)
 
 def main():
-    # Authenticate with Instagram
-    session = login_to_instagram(INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD)
+    # Initialize Instagram chatbot
+    insta_bot = InstagramChatbot(INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD)
 
     # Initialize Sakura.fm chatbot
-    sakura_bot = SakuraChatbot(SAKURA_USERNAME, SAKURA_PASSWORD, MONGODB_URI)
+    sakura_bot = Client(SAKURA_USERNAME, SAKURA_PASSWORD, MONGODB_URI)
 
     try:
-        # Listen for incoming messages
         while True:
             try:
                 # Get new messages from Instagram
-                new_messages = session.get_pending_inbox()
+                new_messages = insta_bot.get_direct_messages()
                 for message in new_messages:
-                    user_id = message["user_id"]
-                    received_text = message["text"]
+                    user_id = message['user_id']
+                    received_text = message['text']
 
-                    # Log user message and username
+                    # Log received message
                     logger.info(f"Received message from user {user_id}: {received_text}")
 
                     # Send the received message to Sakura.fm
-                    sakura_response = sakura_bot.send_message_to_sakura(user_id, 'dmDCgmq', received_text)
+                    sakura_response = sakura_bot.sendMessage(user_id, 'dmDCgmq', received_text)['reply']
 
                     # Log Sakura.fm response
                     logger.info(f"Sakura.fm response: {sakura_response}")
 
                     # Send the Sakura.fm response back to the user on Instagram
-                    session.send_message(user_id, sakura_response)
+                    insta_bot.send_message(user_id, sakura_response)
 
-                # Delay between requests to avoid hitting rate limits
-                time.sleep(10)  # Adjust the sleep time as needed
-
+                # Delay between checks to avoid rate limits
+                time.sleep(10)
             except Exception as e:
-                if '429' in str(e):
-                    handle_rate_limit(session)
-                else:
-                    logger.error(f"Error processing messages: {e}")
+                logger.error(f"Error processing messages: {e}")
+                time.sleep(60)  # Wait a minute before retrying in case of an error
 
     except KeyboardInterrupt:
         print("\nChatbot stopped by user.")
     finally:
-        # Ensure session is properly logged out
-        session.logout()
+        insta_bot.api.logout()
         logger.info("Instagram session logged out.")
 
 if __name__ == "__main__":
