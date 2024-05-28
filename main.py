@@ -1,6 +1,6 @@
 import logging
 import time
-from instagrapi import Client
+from instagram_private_api import Client
 from sakura import Client as SakuraClient
 from config import *
 
@@ -9,9 +9,8 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 def login_to_instagram(username, password):
-    cl = Client()
-    cl.login(username, password)
-    return cl
+    api = Client(username, password)
+    return api
 
 class SakuraChatbot:
     def __init__(self, username, password, mongo_uri):
@@ -24,33 +23,28 @@ class SakuraChatbot:
 # Define a constant for the wait time between requests (in seconds)
 WAIT_TIME_BETWEEN_REQUESTS = 60  # Adjust as needed
 
-def fetch_unread_messages(session):
+def fetch_unread_messages(api):
     try:
         # Sleep for a short duration to avoid hitting rate limits
         time.sleep(WAIT_TIME_BETWEEN_REQUESTS)
 
-        # Fetch all direct message threads
-        all_threads = session.direct_threads()
+        # Fetch all direct messages
+        inbox = api.direct_v2_inbox()
+        unread_messages = [thread["items"][0]["text"] for thread in inbox["inbox"]["threads"] if not thread["items"][0]["item_id"]]
+        logger.info(f"Fetched {len(unread_messages)} unread messages.")
 
-        # Filter unread threads
-        unread_threads = [thread for thread in all_threads if not thread.items[0].item.seen]
-        logger.info(f"Fetched {len(unread_threads)} unread message threads.")
+        # Log message content for debugging
+        for message in unread_messages:
+            logger.debug(f"Message content: {message}")
 
-        # Log thread content for debugging
-        for thread in unread_threads:
-            logger.debug(f"Thread content: {thread.items}")
-
-        return unread_threads
-    except AttributeError:
-        logger.info("No unread messages.")
-        return []
+        return unread_messages
     except Exception as e:
         logger.error(f"Error fetching unread messages: {e}")
         return []
 
 def main():
     # Authenticate with Instagram
-    session = login_to_instagram(INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD)
+    api = login_to_instagram(INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD)
 
     # Initialize Sakura.fm chatbot
     sakura_bot = SakuraChatbot(SAKURA_USERNAME, SAKURA_PASSWORD, MONGODB_URI)
@@ -61,34 +55,24 @@ def main():
     # Listen for incoming messages
     while True:
         try:
-            unread_messages = fetch_unread_messages(session)
-            for thread in unread_messages:
-                for message in thread.items:
-                    user_id = message.user_id
-                    received_text = message.text
-                    logger.info(f"Received message from user {user_id}: {received_text}")
+            unread_messages = fetch_unread_messages(api)
+            for message in unread_messages:
+                # Check if message is not already processed
+                if message not in sent_messages:
+                    # Send the received message to Sakura.fm
+                    sakura_response = sakura_bot.send_message_to_sakura(api.authenticated_user_id, 'dmDCgmq', message)
 
-                    # Check if message is from the bot itself
-                    if user_id == session.user_id:
-                        logger.info("Skipping own message.")
-                        continue
+                    # Log Sakura.fm response
+                    logger.info(f"Sakura.fm response: {sakura_response}")
 
-                    # Check if message is not already processed
-                    if (user_id, received_text) not in sent_messages:
-                        # Send the received message to Sakura.fm
-                        sakura_response = sakura_bot.send_message_to_sakura(user_id, 'dmDCgmq', received_text)
+                    # Send the Sakura.fm response back to the user on Instagram
+                    api.direct_v2_send(sakura_response, [api.authenticated_user_id])
+                    logger.info(f"Replied to user {api.authenticated_user_id} with message: {sakura_response}")
 
-                        # Log Sakura.fm response
-                        logger.info(f"Sakura.fm response: {sakura_response}")
-
-                        # Send the Sakura.fm response back to the user on Instagram
-                        session.direct_send(sakura_response, [user_id])
-                        logger.info(f"Replied to user {user_id} with message: {sakura_response}")
-
-                        # Add sent message to set
-                        sent_messages.add((user_id, received_text))
-                    else:
-                        logger.info("Skipping already processed message.")
+                    # Add sent message to set
+                    sent_messages.add(message)
+                else:
+                    logger.info("Skipping already processed message.")
 
         except KeyboardInterrupt:
             print("\nChatbot stopped by user.")
