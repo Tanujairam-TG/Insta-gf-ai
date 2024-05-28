@@ -2,6 +2,7 @@ from instagrapi import Client
 from sakura import Client as SakuraClient
 from config import *
 import logging
+import time
 
 # Configure logging
 logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(message)s")
@@ -20,6 +21,32 @@ class SakuraChatbot:
         response = self.client.sendMessage(uid, char_id, prompt)
         return response["reply"]  # Extract the relevant part of the response
 
+def fetch_pending_messages(session):
+    try:
+        new_messages = session.direct_threads(pending=True)
+        logger.info(f"Fetched {len(new_messages)} new message threads.")
+        return new_messages
+    except Exception as e:
+        logger.error(f"Error fetching messages: {e}")
+        return []
+
+def process_messages(session, sakura_bot, new_messages):
+    for thread in new_messages:
+        for message in thread.messages:
+            user_id = message.user_id
+            received_text = message.text
+            logger.info(f"Received message from user {user_id}: {received_text}")
+
+            # Send the received message to Sakura.fm
+            sakura_response = sakura_bot.send_message_to_sakura(user_id, 'dmDCgmq', received_text)
+
+            # Log Sakura.fm response
+            logger.info(f"Sakura.fm response: {sakura_response}")
+
+            # Send the Sakura.fm response back to the user on Instagram
+            session.direct_send(sakura_response, [user_id])
+            logger.info(f"Replied to user {user_id} with message: {sakura_response}")
+
 def main():
     # Authenticate with Instagram
     session = login_to_instagram(INSTAGRAM_USERNAME, INSTAGRAM_PASSWORD)
@@ -27,28 +54,18 @@ def main():
     # Initialize Sakura.fm chatbot
     sakura_bot = SakuraChatbot(SAKURA_USERNAME, SAKURA_PASSWORD, MONGODB_URI)
 
+    # Test fetching messages outside the loop
+    test_messages = fetch_pending_messages(session)
+    if not test_messages:
+        logger.error("No messages fetched. Check if there are pending messages or if there's an issue with fetching them.")
+        return
+
     # Listen for incoming messages
     while True:
         try:
-            # Get new messages from Instagram
-            new_messages = session.direct_threads(pending=True)
-            logger.info(f"Fetched {len(new_messages)} new message threads.")
-            
-            for thread in new_messages:
-                for message in thread.messages:
-                    user_id = message.user_id
-                    received_text = message.text
-                    logger.info(f"Received message from user {user_id}: {received_text}")
-
-                    # Send the received message to Sakura.fm
-                    sakura_response = sakura_bot.send_message_to_sakura(user_id, 'dmDCgmq', received_text)
-
-                    # Log Sakura.fm response
-                    logger.info(f"Sakura.fm response: {sakura_response}")
-
-                    # Send the Sakura.fm response back to the user on Instagram
-                    session.direct_send(sakura_response, [user_id])
-                    logger.info(f"Replied to user {user_id} with message: {sakura_response}")
+            new_messages = fetch_pending_messages(session)
+            process_messages(session, sakura_bot, new_messages)
+            time.sleep(60)  # Wait for a minute before checking for new messages again to avoid rate limiting
         except KeyboardInterrupt:
             print("\nChatbot stopped by user.")
             break
