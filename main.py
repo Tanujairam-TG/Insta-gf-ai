@@ -32,12 +32,12 @@ def main():
         try:
             # Get new messages from Instagram
             new_messages = session.direct_threads(pending=True)
+            logger.info(f"Fetched {len(new_messages)} new message threads.")
+            
             for thread in new_messages:
                 for message in thread.messages:
                     user_id = message.user_id
                     received_text = message.text
-
-                    # Log user message and username
                     logger.info(f"Received message from user {user_id}: {received_text}")
 
                     # Send the received message to Sakura.fm
@@ -48,6 +48,7 @@ def main():
 
                     # Send the Sakura.fm response back to the user on Instagram
                     session.direct_send(sakura_response, [user_id])
+                    logger.info(f"Replied to user {user_id} with message: {sakura_response}")
         except KeyboardInterrupt:
             print("\nChatbot stopped by user.")
             break
