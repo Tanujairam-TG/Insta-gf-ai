@@ -23,7 +23,7 @@ class SakuraChatbot:
 
 def fetch_pending_messages(session):
     try:
-        new_messages = session.direct_threads(pending=True)
+        new_messages = session.direct_threads()
         logger.info(f"Fetched {len(new_messages)} new message threads.")
         return new_messages
     except Exception as e:
