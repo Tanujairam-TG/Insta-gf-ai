@@ -1,5 +1,5 @@
 from instabot import Bot
-from sakura_fm import Client
+from sakura import Client
 from config import *
 
 def login_to_instagram(username, password):
