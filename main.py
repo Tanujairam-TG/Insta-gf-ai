@@ -32,10 +32,10 @@ def main():
                 received_text = message["text"]
 
                 # Send the received message to Sakura.fm
-                response = sakura_bot.send_message_to_sakura(user_id, 'dmDCgmq', received_text)
+                sakura_response = sakura_bot.send_message_to_sakura(user_id, 'dmDCgmq', received_text)
 
                 # Send the Sakura.fm response back to the user on Instagram
-                session.send_message(user_id, response)
+                session.send_message(user_id, sakura_response)
         except KeyboardInterrupt:
             print("\nChatbot stopped by user.")
             break
