@@ -1,4 +1,5 @@
 import logging
+import time
 from instagrapi import Client
 from sakura import Client as SakuraClient
 from config import *
@@ -20,8 +21,14 @@ class SakuraChatbot:
         response = self.client.sendMessage(uid, char_id, prompt)
         return response["reply"]  # Extract the relevant part of the response
 
+# Define a constant for the wait time between requests (in seconds)
+WAIT_TIME_BETWEEN_REQUESTS = 60  # Adjust as needed
+
 def fetch_unread_messages(session):
     try:
+        # Sleep for a short duration to avoid hitting rate limits
+        time.sleep(WAIT_TIME_BETWEEN_REQUESTS)
+
         all_threads = session.direct_threads()
         unread_threads = [thread for thread in all_threads if not thread.items[0].item.seen]
         logger.info(f"Fetched {len(unread_threads)} unread message threads.")
