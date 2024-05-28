@@ -24,7 +24,7 @@ class SakuraChatbot:
 def fetch_unread_messages(session):
     try:
         all_threads = session.direct_threads()
-        unread_threads = [thread for thread in all_threads if not thread.seen]
+        unread_threads = [thread for thread in all_threads if not thread.items[0].item.seen]
         logger.info(f"Fetched {len(unread_threads)} unread message threads.")
         return unread_threads
     except Exception as e:
