@@ -1,3 +1,4 @@
-InstagramAPI
+requests>=2.26.0
+instagram-api-python
 sakura_fm
 urllib3
