@@ -1,17 +1,17 @@
-# Use the official Python image as the base image
-FROM python:3.9
+# Use the official Python image from the Docker Hub
+FROM python:3.10-slim
 
-# Set the working directory inside the container
+# Set the working directory
 WORKDIR /app
 
-# Copy the requirements file into the container
+# Copy the requirements file into the image
 COPY requirements.txt .
 
 # Install the required Python packages
-RUN pip install -r requirements.txt
+RUN pip install --no-cache-dir -r requirements.txt
 
-# Copy the rest of your application code into the container
+# Copy the rest of the application code into the image
 COPY . .
 
-# Specify the command to run your chatbot (replace with your actual script name)
+# Define the command to run the application
 CMD ["python", "main.py"]
