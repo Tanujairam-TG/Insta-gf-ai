@@ -1,5 +1,3 @@
-# chatbot.py
-
 import logging
 from instabot import Bot
 from sakura import Client
