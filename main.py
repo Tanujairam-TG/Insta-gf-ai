@@ -1,6 +1,6 @@
 import logging
 import time
-from ensta import Ensta
+from ensta import Client as EnstaClient
 from sakura import Client as SakuraClient
 from config import *
 
@@ -9,7 +9,7 @@ logging.basicConfig(level=logging.INFO, format="%(asctime)s - %(levelname)s - %(
 logger = logging.getLogger(__name__)
 
 def login_to_instagram(username, password):
-    api = Ensta(username, password)
+    api = EnstaClient(username, password)
     api.login()
     return api
 
@@ -23,7 +23,7 @@ class SakuraChatbot:
 
 def fetch_unread_messages(api):
     try:
-        inbox = api.get_unread_inbox()
+        inbox = api.get_inbox()
         unread_messages = []
         for thread in inbox['inbox']['threads']:
             for item in thread['items']:
