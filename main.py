@@ -1,6 +1,6 @@
 import logging
 import time
-from ensta import Client as EnstaClient
+from ensta import Mobile as EnstaClient
 from sakura import Client as SakuraClient
 from config import *
 
